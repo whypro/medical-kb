@@ -500,7 +500,119 @@ class OntologyService {
 	}
 	
 	public void createExaminationIndividual(Examination examination) {
+		String baseURI = ontModel.getNsPrefixURI(NS_URI_PREFIX);
 		
+		//OntClass diseaseOntClass = ontModel.getOntClass(baseURI+"疾病");
+		//OntClass examinationOntClass = ontModel.getOntClass(baseURI+"检查");
+		
+		//Property examinationProperty = ontModel.getProperty(baseURI+"进行检查");
+		//Property examinationPropertyReverse = ontModel.getProperty(baseURI+"检查适应症");
+		
+		System.out.println(examination.getName());
+		//Individual individual = examinationOntClass.createIndividual(baseURI+examination.getName());
+	}
+	
+	public void createSurgeryIndividual(Surgery surgery) {
+		String baseURI = ontModel.getNsPrefixURI(NS_URI_PREFIX);
+		
+		OntClass surgeryOntClass = ontModel.getOntClass(baseURI+"手术");
+		OntClass diseaseOntClass = ontModel.getOntClass(baseURI+"疾病");
+		
+		Property diseaseProperty = ontModel.getProperty(baseURI+"手术适应症");
+		Property diseasePropertyReverse = ontModel.getProperty(baseURI+"进行手术");
+		
+		System.out.println(surgery.getName());
+		Individual individual = surgeryOntClass.createIndividual(baseURI+surgery.getName());
+		
+		// 适应症
+		String rawIndication = surgery.getSymptom();
+		if (rawIndication != null) {
+			for (String terminology : terminologyMap.get("disease").keySet()) {
+				if (rawIndication.contains(terminology)) {
+					// 在本体模型中查询是否包含该疾病实例
+					Individual diseaseIndividual = ontModel.getIndividual(baseURI+terminology);
+					// 存在，添加关联
+					if (diseaseIndividual != null) {
+						if (diseaseIndividual.hasOntClass(diseaseOntClass)) {
+							individual.addProperty(diseaseProperty, diseaseIndividual);
+							diseaseIndividual.addProperty(diseasePropertyReverse, individual);
+						}
+					}
+					// 不存在，创建
+					else {
+						// 从数据库中查询
+						Disease disease = mongoTemplate.findOne(
+							new Query(Criteria.where("name").is(terminology)), 
+							Disease.class, 
+							DISEASE_COLLECTION
+						);
+						if (disease != null) {
+							// symptomIndividual = createSymptomIndividual();
+							diseaseIndividual = diseaseOntClass.createIndividual(baseURI+terminology);
+							individual.addProperty(diseaseProperty, diseaseIndividual);
+							diseaseIndividual.addProperty(diseasePropertyReverse, individual);
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	public void createMedicationIndividual(Medication medication) {
+		String baseURI = ontModel.getNsPrefixURI(NS_URI_PREFIX);
+		
+		OntClass medicationOntClass = ontModel.getOntClass(baseURI+"药物");
+		OntClass diseaseOntClass = ontModel.getOntClass(baseURI+"疾病");
+		
+		Property diseaseProperty = ontModel.getProperty(baseURI+"可治疗疾病");
+		Property diseasePropertyReverse = ontModel.getProperty(baseURI+"可应用药物");
+		
+		System.out.println(medication.getGenericName());
+		Individual individual = null;
+		if (medication.getGenericName() != null) {
+			individual = medicationOntClass.createIndividual(baseURI+medication.getGenericName());
+		}
+		Individual sameIndividual = null;
+		if (medication.getTradeName() != null) {
+			sameIndividual = diseaseOntClass.createIndividual(baseURI+medication.getTradeName());
+		}
+		if (individual != null && sameIndividual != null) {
+			individual.addSameAs(sameIndividual);
+			sameIndividual.addSameAs(individual);
+		}
+		
+		// 适应症
+		String rawDisease = medication.getDisease();
+		if (rawDisease != null) {
+			for (String terminology : terminologyMap.get("disease").keySet()) {
+				if (rawDisease.contains(terminology)) {
+					// 在本体模型中查询是否包含该疾病实例
+					Individual diseaseIndividual = ontModel.getIndividual(baseURI+terminology);
+					// 存在，添加关联
+					if (diseaseIndividual != null) {
+						if (diseaseIndividual.hasOntClass(diseaseOntClass)) {
+							individual.addProperty(diseaseProperty, diseaseIndividual);
+							diseaseIndividual.addProperty(diseasePropertyReverse, individual);
+						}
+					}
+					// 不存在，创建
+					else {
+						// 从数据库中查询
+						Disease disease = mongoTemplate.findOne(
+							new Query(Criteria.where("name").is(terminology)), 
+							Disease.class, 
+							DISEASE_COLLECTION
+						);
+						if (disease != null) {
+							// symptomIndividual = createSymptomIndividual();
+							diseaseIndividual = diseaseOntClass.createIndividual(baseURI+terminology);
+							individual.addProperty(diseaseProperty, diseaseIndividual);
+							diseaseIndividual.addProperty(diseasePropertyReverse, individual);
+						}
+					}
+				}
+			}
+		}
 	}
 	
 		
@@ -512,14 +624,28 @@ class OntologyService {
 				
 		List<Disease> diseases = mongoTemplate.findAll(Disease.class, DISEASE_COLLECTION).subList(0, 100);
 		for (Disease disease : diseases) {
-			// Individual individual = c.createIndividual(ontModel.getNsPrefixURI("MKB")+"Jena生成的");
 			createDiseaseIndividual(disease);
 		}
 		List<Symptom> symptoms = mongoTemplate.findAll(Symptom.class, SYMPTOM_COLLECTION).subList(0, 100);
 		for (Symptom symptom : symptoms) {
-			// Individual individual = c.createIndividual(ontModel.getNsPrefixURI("MKB")+"Jena生成的");
 			createSymptomIndividual(symptom);
 		}
+		
+		List<Examination> examinations = mongoTemplate.findAll(Examination.class, EXAMINATION_COLLECTION).subList(0, 100);
+		for (Examination examination : examinations) {
+			createExaminationIndividual(examination);
+		}
+		
+		List<Surgery> surgeries = mongoTemplate.findAll(Surgery.class, SURGERY_COLLECTION).subList(0, 100);
+		for (Surgery surgery : surgeries) {
+			createSurgeryIndividual(surgery);
+		}
+		
+		List<Medication> medications = mongoTemplate.findAll(Medication.class, MEDICATION_COLLECTION).subList(0, 100);
+		for (Medication medication : medications) {
+			createMedicationIndividual(medication);
+		}
+		
 		
 	}
 	
