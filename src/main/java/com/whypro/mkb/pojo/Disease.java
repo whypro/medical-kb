@@ -25,6 +25,27 @@ public class Disease implements Serializable {
     String identification;
     String cause;
     
+    /*
+    @Override
+    public String toString() {
+    	int maxLength = 80;
+		return 
+			"标识: " + (this.id + '\n') + 
+			"链接: " + (this.url + '\n') +
+			"名称: " + (this.name + '\n') +
+			"检查：" + (this.examination != null  ? this.examination.substring(0, maxLength) : ' ') + '\n' +
+			"概述: " + (this.summary != null  ? this.summary.substring(0, maxLength) : ' ') + '\n' +
+			"别名: " + (this.aliases != null ? String.join(", ", this.aliases) : ' ') + '\n' +
+			"症状: " + (this.symptom != null  ? this.symptom.substring(0, maxLength) : ' ') + '\n' +
+			"饮食: " + (this.diet != null  ? this.diet.substring(0, maxLength) : ' ') + '\n' +
+			"治疗: " + (this.treat != null  ? this.treat.substring(0, maxLength) : ' ') + '\n' +
+			"预防: " + (this.prevention != null  ? this.prevention.substring(0, maxLength) : ' ') + '\n' +
+			"并发症: " + (this.complication != null  ? this.complication.substring(0, maxLength) : ' ') + '\n' +
+			"鉴别: " + (this.identification != null  ? this.identification.substring(0, maxLength) : ' ') + '\n' +
+			"病因: " + (this.cause != null  ? this.cause.substring(0, maxLength) : ' ') + '\n';
+    }
+    */
+    
 	public String getId() {
 		return id;
 	}
